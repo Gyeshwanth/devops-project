@@ -6,13 +6,40 @@
 sudo apt install mysql-server -y
 ```
 
-### 2. Login to MySQL
+### 2. Start, Restart, and Check MySQL Service
+
+* **Start MySQL server**
 
 ```bash
-sudo mysql -u root -p
+sudo systemctl start mysql
 ```
 
-### 3. Set Root Password
+Purpose: Start the MySQL server if it is not running.
+
+* **Restart MySQL server**
+
+```bash
+sudo systemctl restart mysql
+```
+
+Purpose: Restart the MySQL server to apply configuration changes or recover from errors.
+
+* **Check MySQL server status**
+
+```bash
+sudo systemctl status mysql
+```
+
+Purpose: Verify if the MySQL server is active and running.
+
+````
+
+### 3. Login to MySQL
+```bash
+sudo mysql -u root -p
+````
+
+### 4. Set Root Password
 
 ```sql
 ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'java';
@@ -20,7 +47,7 @@ FLUSH PRIVILEGES;
 EXIT;
 ```
 
-### 4. Create Database
+### 5. Create Database
 
 ```sql
 -- Create the database if not already exists
@@ -30,7 +57,7 @@ CREATE DATABASE IF NOT EXISTS crud_app;
 USE crud_app;
 ```
 
-### 5. Create Table
+### 6. Create Table
 
 ```sql
 -- Drop table if needed (optional safety cleanup)
