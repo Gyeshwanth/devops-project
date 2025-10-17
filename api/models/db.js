@@ -16,3 +16,4 @@ const db = mysql
   });
 
 module.exports = db;
+
