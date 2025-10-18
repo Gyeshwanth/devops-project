@@ -6,7 +6,7 @@ services:
     container_name: mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: Aditya
+      MYSQL_ROOT_PASSWORD: java
       MYSQL_DATABASE: crud_app
     volumes:
       - mysql-data:/var/lib/mysql
