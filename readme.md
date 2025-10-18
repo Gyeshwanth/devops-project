@@ -165,6 +165,8 @@ ls -l
 * **NodeJS Plugin**
 * **Pipeline Stage View**
 * **SonarQube Scanner for Jenkins**
+* **Docker Pipeline**
+* **Docker Compose Build Step**
 
 ---
 
@@ -375,3 +377,27 @@ pipeline {
         }
 
 ```
+
+
+---
+
+## 🧾 Viewing Reports
+
+Navigate to Jenkins workspace:
+
+```bash
+cd /var/lib/jenkins/workspace/<JOB_NAME>/
+ls -l
+```
+
+Look for:
+
+```
+fs-report.html
+backend-image-report.html
+frontend-image-report.html
+```
+
+Open in Jenkins or browser to review vulnerabilities.
+
+---
