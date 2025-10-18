@@ -2,7 +2,7 @@
 
 ---
 
-## 🏷️ Infrastructure Setup
+## 🏗️ Infrastructure Setup
 
 **Tools and Components:**
 
@@ -46,8 +46,8 @@ Trivy (Image Vulnerability Scan) → DockerHub Push → Kubernetes Deployment
   * SonarQube Server
 * Instance Type: `t2.medium`
 * OS: **Ubuntu 25**
-* Configure Security Group and Key Pair.
-* Connect to both servers using **MobaXterm**.
+* Configure Security Group and Key Pair
+* Connect to both servers using **MobaXterm**
 
 ---
 
@@ -66,7 +66,7 @@ sudo apt install jenkins -y
 ```
 
 **2. Install Java:**
-Use **OpenJDK 21 Headless**.
+Use **OpenJDK 21 Headless** (no GUI support)
 
 **3. Access Jenkins:**
 
@@ -124,12 +124,16 @@ Change password → `java`
 ## 🔐 Gitleaks Setup (Secrets Scanning)
 
 ```bash
-sudo apt install gitleaks -y
+GITLEAKS_VERSION=$(curl -s "https://api.github.com/repos/gitleaks/gitleaks/releases/latest" | grep -Po '"tag_name": "v\K[0-9.]+')
+wget -qO gitleaks.tar.gz https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz
+sudo tar xf gitleaks.tar.gz -C /usr/local/bin gitleaks
+gitleaks version
+rm -rf gitleaks.tar.gz
 ```
 
 ---
 
-## 🧮 Trivy Setup (Vulnerability Scanning)
+## 🧰 Trivy Setup (Vulnerability Scanning)
 
 ```bash
 sudo apt-get install wget apt-transport-https gnupg lsb-release -y
@@ -142,6 +146,18 @@ sudo apt-get install trivy -y
 trivy --version
 ```
 
+**Trivy scan results locations:**
+
+* File system scan (FS): `fs-report.html` inside Jenkins workspace
+* Docker image scan: `frontend-image-report.html` and `backend-image-report.html`
+
+Access after pipeline run:
+
+```bash
+cd /var/lib/jenkins/workspace/<JOB_NAME>/
+ls -l
+```
+
 ---
 
 ## 🔌 Jenkins Plugins
@@ -149,8 +165,6 @@ trivy --version
 * **NodeJS Plugin**
 * **Pipeline Stage View**
 * **SonarQube Scanner for Jenkins**
-* **Docker Pipeline**
-* **Docker Compose Build Step Plugin**
 
 ---
 
@@ -158,55 +172,63 @@ trivy --version
 
 ### NodeJS Tool Setup
 
-```
-Manage Jenkins → Tools → NodeJS installations → Add → nodejs23
+* Navigate to: **Manage Jenkins → Tools → NodeJS installations**
+* Add a NodeJS version (e.g., `nodejs23`)
+* Reference inside pipeline:
+
+```groovy
+tools { nodejs 'nodejs23' }
 ```
 
 ### SonarQube Scanner Setup
 
-```
-Manage Jenkins → Tools → SonarQube Scanner → Add Installation → sonar-scanner
-```
+1. **Manage Jenkins → Tools → SonarQube Scanner → Add Installation**
 
-Generate a token in SonarQube and add it as **Secret Text Credential (ID: sonar-token)**.
+   * Name: `sonar-scanner`
+2. **Generate and Add SonarQube Token**
 
-Add SonarQube server config:
+   * SonarQube → **Administration → Security → Tokens → Generate Token**
+   * Jenkins → **Manage Credentials → Global → Add Credentials** → Secret Text → ID: `sonar-token`
+3. **Add SonarQube Server in Jenkins**
+
+   * Name: `sonar`
+   * URL: `http://<SONARQUBE_IP>:9000`
+   * Authentication Token: `sonar-token`
+
+### Webhook Configuration (For Quality Gate)
+
+* SonarQube → **Administration → Configuration → Webhooks → Create New**
 
 ```
-Manage Jenkins → System → SonarQube Servers → Add SonarQube
-Name: sonar
-URL: http://<SONARQUBE_IP>:9000
-Authentication: sonar-token
-```
-
-Webhook for Quality Gate:
-
-```
-SonarQube → Administration → Configuration → Webhooks → Create →
 Name: Jenkins-Webhook
 URL: http://<JENKINS_IP>:8080/sonarqube-webhook/
 ```
 
 ---
 
-## 🚀 Docker Setup in Jenkins VM
+## 🐳 Docker Setup for CI/CD
 
-```bash
-sudo apt install docker.io -y
-sudo usermod -aG docker jenkins
-sudo systemctl restart jenkins
+### Dockerfile Recommendations (Multi-stage Build)
+
+* **Frontend and Backend Dockerfiles** should use multi-stage builds to optimize image size.
+* For when to use the Java application, use JDK for compilation in the intermediate stage and JRE/base image for runtime.
+* Example for Node.js:
+
+```
+# Stage 1: Build
+FROM node:18-alpine as builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+
+# Stage 2: Production
+FROM nginx:alpine
+COPY --from=builder /app/build /usr/share/nginx/html
 ```
 
-Install Docker Compose:
-
-```bash
-sudo curl -SL https://github.com/docker/compose/releases/download/v2.40.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
-```
-
----
-
-## 💪 Docker Compose Configuration (root directory)
+### Docker-Compose (Root Project Directory)
 
 ```yaml
 version: '3.8'
@@ -252,52 +274,18 @@ volumes:
   mysql-data:
 ```
 
----
+### Docker Commands for Checking & Cleanup
 
-## 🛠️ Multi-Stage Dockerfile Optimization
-
-### Example: Backend (api/Dockerfile)
-
-```dockerfile
-# Stage 1: Build
-FROM node:18-alpine AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm install --production=false
-COPY . .
-RUN npm run build
-
-# Stage 2: Runtime
-FROM node:18-alpine
-WORKDIR /app
-COPY --from=builder /app/dist ./dist
-COPY package*.json ./
-RUN npm install --only=production
-EXPOSE 5000
-CMD ["node", "dist/server.js"]
-```
-
-### Example: Frontend (client/Dockerfile)
-
-```dockerfile
-# Stage 1: Build
-FROM node:18-alpine AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-RUN npm run build
-
-# Stage 2: Serve static files
-FROM nginx:alpine
-COPY --from=builder /app/build /usr/share/nginx/html
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
-```
+* **List running containers:** `docker ps`
+* **List all containers:** `docker ps -a`
+* **Container logs:** `docker logs <container_id>`
+* **Stop all containers:** `docker stop $(docker ps -aq)`
+* **Remove all containers:** `docker rm $(docker ps -aq)`
+* **Remove all images:** `docker rmi -f $(docker images -aq)`
 
 ---
 
-## 💡 Jenkins Pipeline Script
+## 🧪 Jenkins Pipeline Script (Full DevSecOps Flow)
 
 ```groovy
 pipeline {
@@ -307,9 +295,9 @@ pipeline {
         nodejs 'nodejs23'
     }
 
-    environment {
-        SCANNER_HOME = tool 'sonar-scanner'
-    }
+   environment {
+       SCANNER_HOME = tool 'sonar-scanner'
+   }
 
     stages {
         stage('Git Checkout') {
@@ -319,19 +307,11 @@ pipeline {
         }
 
         stage('Frontend Compile') {
-            steps {
-                dir('client') {
-                    sh 'find . -name "*.js" -exec node --check {} +'
-                }
-            }
+            steps { dir('client') { sh 'find . -name "*.js" -exec node --check {} +' } }
         }
 
         stage('Backend Compile') {
-            steps {
-                dir('api') {
-                    sh 'find . -name "*.js" -exec node --check {} +'
-                }
-            }
+            steps { dir('api') { sh 'find . -name "*.js" -exec node --check {} +' } }
         }
 
         stage('Gitleaks Scan') {
@@ -343,96 +323,55 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('sonar') {
-                    sh '''$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=NodeJS-Project \
-                           -Dsonar.projectKey=NodeJS-Project'''
-                }
+               withSonarQubeEnv('sonar') {
+                   sh '''$SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=NodeJS-Project \
+                         -Dsonar.projectKey=NodeJS-Project'''
+               }
             }
         }
 
         stage('Quality Gate Check') {
-            steps {
-                timeout(time: 1, unit: 'HOURS') {
-                    waitForQualityGate abortPipeline: false, credentialsId: 'sonar-token'
-                }
-            }
+            steps { timeout(time: 1, unit: 'HOURS') { waitForQualityGate abortPipeline: false, credentialsId: 'sonar-token' } }
         }
 
         stage('Trivy FS Scan') {
-            steps {
-                sh 'trivy fs --format table -o fs-report.html .'
-            }
+            steps { sh 'trivy fs --format table -o fs-report.html .' }
         }
 
-        stage('Build & Push Backend Image') {
+        stage('Build & Push Backend Docker Image') {
             steps {
-                script {
-                    withDockerRegistry(credentialsId: 'docker-cred') {
-                        dir('api') {
-                            sh 'docker build -t yeshwanthgosi/backend:latest .'
-                            sh 'trivy image --format table -o backend-image-report.html yeshwanthgosi/backend:latest'
-                            sh 'docker push yeshwanthgosi/backend:latest'
-                        }
-                    }
+              script {
+                withDockerRegistry(credentialsId: 'docker-cred') {
+                   dir('api') {
+                       sh 'docker build -t yeshwanthgosi/backend:latest .'
+                       sh 'trivy image --format table -o backend-image-report.html yeshwanthgosi/backend:latest'
+                       sh 'docker push yeshwanthgosi/backend:latest'
+                   }
                 }
+              }
             }
         }
 
-        stage('Build & Push Frontend Image') {
+        stage('Build & Push Frontend Docker Image') {
             steps {
-                script {
-                    withDockerRegistry(credentialsId: 'docker-cred') {
-                        dir('client') {
-                            sh 'docker build -t yeshwanthgosi/frontend:latest .'
-                            sh 'trivy image --format table -o frontend-image-report.html yeshwanthgosi/frontend:latest'
-                            sh 'docker push yeshwanthgosi/frontend:latest'
-                        }
-                    }
+              script {
+                withDockerRegistry(credentialsId: 'docker-cred') {
+                   dir('client') {
+                       sh 'docker build -t yeshwanthgosi/frontend:latest .'
+                       sh 'trivy image --format table -o frontend-image-report.html yeshwanthgosi/frontend:latest'
+                       sh 'docker push yeshwanthgosi/frontend:latest'
+                   }
                 }
+              }
             }
         }
 
-        stage('Deploy with Docker Compose') {
-            steps {
-                sh 'docker-compose up -d'
-            }
+        stage('Docker-Compose Deploy') {
+            steps { sh 'docker-compose up -d' }
         }
 
-        stage('Done') {
-            steps {
-                echo 'Pipeline completed successfully!'
-            }
+        stage('Completion') {
+            steps { echo 'Pipeline execution completed successfully!' }
         }
-    }
-}
+
 ```
-
----
-
-## 🔢 Useful Docker Commands
-
-```bash
-# View container logs
-docker logs <container_id>
-
-# Stop and remove all containers
-docker stop $(docker ps -aq)
-docker rm $(docker ps -aq)
-
-# Remove all images
-docker rmi -f $(docker images -aq)
-```
-
----
-
-## ✅ Summary
-
-This project demonstrates a **complete DevSecOps CI/CD pipeline** that integrates security, quality, and automation:
-
-* **Continuous Integration** → Jenkins + GitHub
-* **Static Code Analysis** → SonarQube
-* **Secrets Scanning** → Gitleaks
-* **Vulnerability Scanning** → Trivy
-* **Continuous Deployment** → Docker & Kubernetes
-
-All components together ensure a **secure, optimized, and production-ready** delivery workflow.
