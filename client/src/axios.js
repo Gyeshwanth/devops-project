@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 const instance = axios.create({
-  baseURL: `http://${process.env.REACT_APP_API}/api`, // full backend URL
+ baseURL: '/api', // full backend URL
 });
 
 instance.interceptors.request.use((config) => {
