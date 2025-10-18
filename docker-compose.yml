@@ -20,9 +20,9 @@ services:
     environment:
       DB_HOST: mysql
       DB_USER: root
-      DB_PASSWORD: Aditya
+      DB_PASSWORD: java
       DB_NAME: crud_app
-      JWT_SECRET: devopsShackSuperSecretKey
+      JWT_SECRET: SuperSecretKey
       RESET_ADMIN_PASS: 'true'
     depends_on:
       - mysql
