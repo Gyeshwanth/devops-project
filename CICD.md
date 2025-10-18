@@ -124,19 +124,9 @@ Change password → `java`
 
 ## 🔐 Gitleaks Setup (Secrets Scanning)
 
+
 ```bash
-# Fetch latest version
-gitleaks_version=$(curl -s "https://api.github.com/repos/gitleaks/gitleaks/releases/latest" | grep -Po '"tag_name": "v\\K[0-9.]+')
-
-# Download and install
-wget -qO gitleaks.tar.gz https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks_${gitleaks_version}_linux_x64.tar.gz
-sudo tar xf gitleaks.tar.gz -C /usr/local/bin gitleaks
-
-# Verify installation
-gitleaks version
-
-# Cleanup
-rm -rf gitleaks.tar.gz
+sudo apt install git leaks
 ```
 
 ---
