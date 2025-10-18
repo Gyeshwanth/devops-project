@@ -1,8 +1,15 @@
 // src/axios.js
 import axios from 'axios';
 
+// Dynamically determine API base URL
+const API_BASE_URL =
+  process.env.REACT_APP_API ||
+  (window.location.hostname === 'localhost'
+    ? 'http://localhost:5000'
+    : `http://${window.location.hostname}:5000`);
+
 const instance = axios.create({
- baseURL: '/api', // full backend URL
+  baseURL: API_BASE_URL,
 });
 
 instance.interceptors.request.use((config) => {
@@ -12,4 +19,3 @@ instance.interceptors.request.use((config) => {
 });
 
 export default instance;
-
