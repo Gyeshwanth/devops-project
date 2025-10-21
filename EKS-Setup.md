@@ -108,6 +108,30 @@ terraform --version
 ```
 
 ---
+##  Running Terraform
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/Gyeshwanth/Terraform-devops-project.git
+cd Terraform-devops-project
+```
+
+2. Update `variables.tf` with your AWS key-pair and other configuration.
+3. Update `main.tf` to set the correct region and settings.
+4. Initialize and apply Terraform:
+
+```bash
+terraform init
+terraform plan
+terraform apply --auto-approve
+```
+
+**Purpose:** Creates EKS cluster, VPC, and required AWS resources automatically.
+
+---
+
+
 
 ## 5️⃣ Configure kubeconfig for EKS
 
@@ -190,28 +214,6 @@ kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/
 
 ---
 
-## 9️⃣ Running Terraform
-
-1. Clone the repository:
-
-```bash
-git clone https://github.com/Gyeshwanth/Terraform-devops-project.git
-cd Terraform-devops-project
-```
-
-2. Update `variables.tf` with your AWS key-pair and other configuration.
-3. Update `main.tf` to set the correct region and settings.
-4. Initialize and apply Terraform:
-
-```bash
-terraform init
-terraform plan
-terraform apply --auto-approve
-```
-
-**Purpose:** Creates EKS cluster, VPC, and required AWS resources automatically.
-
----
 
 ## 🔗 Connecting Pods to AWS Services
 
