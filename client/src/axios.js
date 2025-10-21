@@ -6,7 +6,7 @@ const API_BASE_URL =
   process.env.REACT_APP_API ||
   (window.location.hostname === 'localhost'
     ? 'http://localhost:5000/api'
-    : `http://${window.location.hostname}:5000/api`);
+    : '/api');
 
 const instance = axios.create({
   baseURL: API_BASE_URL,
