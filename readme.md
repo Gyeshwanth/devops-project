@@ -53,7 +53,10 @@ Trivy (Image Vulnerability Scan) → DockerHub Push → Kubernetes Deployment
 
 ## ⚙️ Jenkins Setup
 
-**1. Install Jenkins:**
+**1. Install Java:**
+Use **OpenJDK 21 Headless** (no GUI support)
+
+**2. Install Jenkins:**
 
 ```bash
 sudo wget -O /etc/apt/keyrings/jenkins-keyring.asc \
@@ -64,9 +67,6 @@ echo "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc]" \
 sudo apt update
 sudo apt install jenkins -y
 ```
-
-**2. Install Java:**
-Use **OpenJDK 21 Headless** (no GUI support)
 
 **3. Access Jenkins:**
 
