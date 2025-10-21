@@ -1,0 +1,13 @@
+# -------------------------------
+# StorageClass for AWS EBS volumes
+# -------------------------------
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ebs-sc  # 👈 Name of the StorageClass (referenced by PVCs)
+provisioner: ebs.csi.aws.com  # 👈 Uses AWS EBS CSI driver for dynamic provisioning
+parameters:
+  type: gp3       # 👈 EBS volume type (gp3 = general purpose SSD)
+  fsType: ext4    # 👈 Filesystem type for formatting the volume
+reclaimPolicy: Retain  # 👈 Keeps the volume even after PVC deletion (manual cleanup required)
+volumeBindingMode: WaitForFirstConsumer  # 👈 Waits until a Pod is scheduled before creating the volume
