@@ -192,4 +192,3 @@ eksctl utils associate-iam-oidc-provider --cluster <your-cluster-name> --approve
 
 ---
 
-This document is formatted for clarity and can be saved as a `.md` file using any text editor or via Canva for documentation purposes.
