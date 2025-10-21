@@ -25,6 +25,50 @@ aws configure  # provide AWS Access Key, Secret Key, region, and output format
 ```
 
 ---
+# 🔑 How to Generate AWS Access Key and Secret Access Key
+
+This guide walks you through creating AWS Access Keys for CLI, SDK, or Terraform usage.
+
+---
+
+## 1️⃣ Sign in to AWS Management Console
+- Go to [https://console.aws.amazon.com/](https://console.aws.amazon.com/)
+- Log in using your **IAM user credentials** (do **not** use root account).
+
+---
+
+## 2️⃣ Open IAM (Identity and Access Management)
+- In the AWS search bar, type **IAM** → click **IAM** service.
+
+---
+
+## 3️⃣ Select Your IAM User
+- From the left menu → **Users**
+- Click the **username** for which you want to create keys.
+
+---
+
+## 4️⃣ Create Access Keys
+- Go to the **Security credentials** tab.  
+- Scroll to **Access keys** section.  
+- Click **Create access key**.
+
+---
+
+## 5️⃣ Choose Key Type
+- Select **Application running outside AWS** (for CLI, SDK, Terraform).  
+- Click **Next**, then **Create access key**.
+
+---
+
+## 6️⃣ Copy and Save Keys
+After creation, AWS will show:  
+- **Access Key ID**  
+- **Secret Access Key**
+
+> ⚠️ Important: Secret key is **shown only once**. Save it securely (password manager or `~/.aws/credentials`).
+
+---
 
 ## 2️⃣ Install kubectl
 
