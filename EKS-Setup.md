@@ -125,6 +125,37 @@ cd Terraform-devops-project
 terraform init
 terraform plan
 terraform apply --auto-approve
+
+
+# Terraform Destroy Guide
+
+## Purpose
+
+* Deletes all AWS resources (EC2, EKS, VPCs, S3, IAM roles, etc.) created by Terraform.
+* Cleans up the infrastructure to avoid ongoing costs.
+* Useful in development, testing, or when you want to completely remove a deployment.
+* **Single-command simplicity:** Removing all resources manually from AWS can be complex and error-prone due to dependencies between services; `terraform destroy` handles this automatically in the correct order.
+
+## Command
+
+```bash
+terraform destroy
+```
+
+### Optional Flag
+
+```bash
+terraform destroy --auto-approve
+```
+
+* Skips the confirmation prompt and removes all resources immediately.
+
+## Notes
+
+* **Destructive:** Permanently deletes resources.
+* **Production Caution:** Only use if you intend to remove all live infrastructure.
+* **State File Dependency:** Terraform uses its state file to know which resources to delete. If the state is missing or corrupted, the command may fail or behave unpredictably.
+
 ```
 
 **Purpose:** Creates EKS cluster, VPC, and required AWS resources automatically.
