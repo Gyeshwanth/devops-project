@@ -121,11 +121,15 @@ cd Terraform-devops-project
 3. Update `main.tf` to set the correct region and settings.
 4. Initialize and apply Terraform:
 
+**Purpose:** Creates EKS cluster, VPC, and required AWS resources automatically.
+
 ```bash
 terraform init
 terraform plan
 terraform apply --auto-approve
 
+terraform destroy
+```
 
 # Terraform Destroy Guide
 
@@ -136,11 +140,7 @@ terraform apply --auto-approve
 * Useful in development, testing, or when you want to completely remove a deployment.
 * **Single-command simplicity:** Removing all resources manually from AWS can be complex and error-prone due to dependencies between services; `terraform destroy` handles this automatically in the correct order.
 
-## Command
 
-```bash
-terraform destroy
-```
 
 ### Optional Flag
 
@@ -156,9 +156,7 @@ terraform destroy --auto-approve
 * **Production Caution:** Only use if you intend to remove all live infrastructure.
 * **State File Dependency:** Terraform uses its state file to know which resources to delete. If the state is missing or corrupted, the command may fail or behave unpredictably.
 
-```
 
-**Purpose:** Creates EKS cluster, VPC, and required AWS resources automatically.
 
 ---
 
