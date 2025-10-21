@@ -51,43 +51,9 @@ Trivy (Image Vulnerability Scan) → DockerHub Push → Kubernetes Deployment
 
 ---
 
-## ⚙️ Jenkins Setup
 
-**1. Install Jenkins:**
 
-```bash
-sudo wget -O /etc/apt/keyrings/jenkins-keyring.asc \
-  https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
-echo "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc]" \
-  https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
-  /etc/apt/sources.list.d/jenkins.list > /dev/null
-sudo apt update
-sudo apt install jenkins -y
-```
-
-**2. Install Java:**
-Use **OpenJDK 21 Headless** (no GUI support)
-
-**3. Access Jenkins:**
-
-```
-http://<JENKINS_PUBLIC_IP>:8080
-```
-
-Retrieve initial admin password:
-
-```bash
-sudo cat /var/lib/jenkins/secrets/initialAdminPassword
-```
-
-**4. Configure Jenkins:**
-
-* Install **Suggested Plugins**
-* Create Admin User → Username: `yeshwanth`, Password: `java`
-
----
-
-## 🧠 SonarQube Setup (with Docker)
+## 🧠 SonarQube Setup (with Docker)  Do this SonarQube-server(Ec2)
 
 **1. Install Docker:**
 
@@ -120,6 +86,45 @@ Password: admin
 Change password → `java`
 
 ---
+
+## ⚙️ Jenkins Setup  Do this Jenkins-server(Ec2)
+
+
+**1. Install Java:**
+Use **OpenJDK 21 Headless** (no GUI support)
+
+
+**2. Install Jenkins:**
+
+```bash
+sudo wget -O /etc/apt/keyrings/jenkins-keyring.asc \
+  https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+echo "deb [signed-by=/etc/apt/keyrings/jenkins-keyring.asc]" \
+  https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
+  /etc/apt/sources.list.d/jenkins.list > /dev/null
+sudo apt update
+sudo apt install jenkins -y
+```
+
+**3. Access Jenkins:**
+
+```
+http://<JENKINS_PUBLIC_IP>:8080
+```
+
+Retrieve initial admin password:
+
+```bash
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+```
+
+**4. Configure Jenkins:**
+
+* Install **Suggested Plugins**
+* Create Admin User → Username: `yeshwanth`, Password: `java`
+
+---
+
 
 ## 🔐 Gitleaks Setup (Secrets Scanning)
 
@@ -208,7 +213,25 @@ URL: http://<JENKINS_IP>:8080/sonarqube-webhook/
 
 ---
 
-## 🐳 Docker Setup for CI/CD
+
+
+## 🐳 Docker Setup for CI/CD 
+* Install Docker and Docker-compose*
+
+```bash
+docker 
+sudo apt install docker.io
+sudo usermod -aG docker jenkins
+sudo systemctl restart docker  or  exit
+
+```
+```bash
+
+sudo  curl -SL https://github.com/docker/compose/releases/download/v2.40.1/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
+
+sudo chmod +x /usr/local/bin/docker-compose
+
+```
 
 ### Dockerfile Recommendations (Multi-stage Build)
 
