@@ -13,7 +13,7 @@ pipeline {
     stages {
         stage('git checkout') {
             steps {
-                git branch: 'build', credentialsId: 'gitcred', url: 'https://github.com/Gyeshwanth/devops-project.git'
+                git branch: 'deploy_K8s', credentialsId: 'gitcred', url: 'https://github.com/Gyeshwanth/devops-project.git'
             }
         }
         
@@ -94,21 +94,37 @@ pipeline {
     }
       
       
-        stage('docker-compose') {
-            steps {
+       stage('k8s-deploy') {
+        steps {
              script {
-                 sh 'docker-compose up -d '
+                  
+    withKubeConfig(caCertificate: '', clusterName: ' yesh-cluster', contextName: '', credentialsId: 'k8s-token', namespace: 'dev', restrictKubeConfigAccess: false, serverUrl: 'https://7CEBD932F89B3BD349EDE73AD44A8264.sk1.ap-south-1.eks.amazonaws.com') {
+       sh 'kubectl apply -f k8s/sc.yaml -n dev'
+        sh 'kubectl apply -f k8s/mysql.yaml -n dev'
+         sh 'kubectl apply -f k8s/backend.yaml -n dev'
+          sh 'kubectl apply -f k8s/frontend.yaml -n dev'
+          sleep 30
+        }
              }
-            }
         }
-        
-        
-        
-         stage('done') {
-            steps {
-              echo 'done!'
-            }
+    }
+    
+   
+  stage('verify-k8s-deploy') {
+        steps {
+             script {
+                  
+    withKubeConfig(caCertificate: '', clusterName: ' yesh-cluster', contextName: '', credentialsId: 'k8s-token', namespace: 'dev', restrictKubeConfigAccess: false, serverUrl: 'https://7CEBD932F89B3BD349EDE73AD44A8264.sk1.ap-south-1.eks.amazonaws.com') {
+       sh 'kubectl get pods -n dev'
+         sh 'kubectl get svc -n dev'
+       
         }
+             }
+        }
+    }
+ 
+
+
         
     }
 }
