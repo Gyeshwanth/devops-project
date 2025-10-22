@@ -37,18 +37,20 @@ Trivy (Image Vulnerability Scan) → DockerHub Push → Kubernetes Deployment
 
 ---
 
+
 ## ☁️ Server Setup
 
 **EC2 Configuration:**
 
-* Create **2 EC2 instances**:
+* Create **3 EC2 instances**:
 
   * Jenkins Server
   * SonarQube Server
+  * **EKS Master Node** (for running kubectl commands)
 * Instance Type: `t2.medium`
-* OS: **Ubuntu 25**
+* OS: **Ubuntu 24**
 * Configure Security Group and Key Pair
-* Connect to both servers using **MobaXterm**
+* Connect to servers using **MobaXterm**
 
 ---
 
@@ -392,13 +394,38 @@ pipeline {
             }
         }
 
-        stage('Docker-Compose Deploy') {
-            steps { sh 'docker-compose up -d' }
+        stage('k8s-deploy') {
+        steps {
+             script {
+                  
+    withKubeConfig(caCertificate: '', clusterName: ' yesh-cluster', contextName: '', credentialsId: 'k8s-token', namespace: 'dev', restrictKubeConfigAccess: false, serverUrl: 'https://7CEBD932F89B3BD349EDE73AD44A8264.sk1.ap-south-1.eks.amazonaws.com') {
+       sh 'kubectl apply -f k8s/sc.yaml -n dev'
+        sh 'kubectl apply -f k8s/mysql.yaml -n dev'
+         sh 'kubectl apply -f k8s/backend.yaml -n dev'
+          sh 'kubectl apply -f k8s/frontend.yaml -n dev'
+          sleep 30
         }
+             }
+        }
+    }
+    
+   
+  stage('verify-k8s-deploy') {
+        steps {
+             script {
+                  
+    withKubeConfig(caCertificate: '', clusterName: ' yesh-cluster', contextName: '', credentialsId: 'k8s-token', namespace: 'dev', restrictKubeConfigAccess: false, serverUrl: 'https://7CEBD932F89B3BD349EDE73AD44A8264.sk1.ap-south-1.eks.amazonaws.com') {
+       sh 'kubectl get pods -n dev'
+         sh 'kubectl get svc -n dev'
+       
+        }
+             }
+        }
+    }
 
-        stage('Completion') {
-            steps { echo 'Pipeline execution completed successfully!' }
-        }
+
+}
+}
 
 ```
 
@@ -425,3 +452,135 @@ frontend-image-report.html
 Open in Jenkins or browser to review vulnerabilities.
 
 ---
+
+# EKS Master Node Setup for Jenkins Integration
+
+This document describes how to set up an EC2 instance as an EKS Master Node to run `kubectl` commands and integrate with Jenkins pipelines for Kubernetes automation.
+
+---
+
+## 1. Launch EC2 Instance
+
+**Instance Type:** `t2.medium`
+
+**Steps:**
+
+1. Login to AWS Management Console.
+2. Navigate to **EC2 → Launch Instance**.
+3. Choose Ubuntu  (or preferred Linux distro).
+4. Select instance type `t2.medium`.
+5. Configure security group (allow SSH and necessary ports).
+6. Launch instance and connect via SSH:
+
+```bash
+ssh -i your-key.pem ubuntu@<EC2_PUBLIC_IP>
+```
+
+---
+
+## 2. Install Required Tools & Plugins
+
+**Install AWS CLI, kubectl, eksctl:**
+
+```bash
+# Update system
+sudo apt update && sudo apt install -y curl unzip
+
+# AWS CLI
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+
+# kubectl
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/
+
+# eksctl
+curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+sudo mv /tmp/eksctl /usr/local/bin/
+```
+
+**Plugins Required for Jenkins:**
+
+* Kubernetes CLI
+* Kubernetes
+* Kubernetes Credentials
+
+---
+
+## 3. Configure kubeconfig
+
+```bash
+aws eks --region ap-south-1 update-kubeconfig --name yesh-cluster
+```
+
+---
+
+## 4. Associate IAM OIDC Provider
+
+```bash
+eksctl utils associate-iam-oidc-provider --region ap-south-1 --cluster yesh-cluster --approve
+```
+
+---
+
+## 5. Create IAM Service Account for EBS CSI Driver
+
+```bash
+eksctl create iamserviceaccount \
+--region ap-south-1 \
+--name ebs-csi-controller-sa \
+--namespace kube-system \
+--cluster yesh-cluster \
+--attach-policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy \
+--approve \
+--override-existing-serviceaccounts
+```
+
+---
+
+## 6. Apply Kubernetes RBAC YAMLs for Jenkins Automation
+
+Reference RBAC YAML files: [RBAC YAMLs](https://github.com/Gyeshwanth/Terraform-devops-project/blob/main/RBAC/rbac.md)
+
+**Steps:**
+
+1. Create namespace `dev`.
+2. Create secret YAML `secret.yaml`:
+
+```yaml
+apiVersion: v1
+kind: Secret
+type: kubernetes.io/service-account-token
+metadata:
+  name: mysecretname
+  annotations:
+    kubernetes.io/service-account.name: jenkins
+```
+
+3. Apply secret:
+
+```bash
+kubectl apply -f secret.yaml -n dev
+```
+
+4. Retrieve token:
+
+```bash
+kubectl describe secret mysecretname -n dev
+```
+
+*Copy token → Jenkins → Manage → Credentials → Secret Text → ID: `k8s-token`*
+
+---
+
+## 7. Configure Jenkins for EKS
+
+1. Copy the **EKS cluster endpoint** from AWS → EKS → Cluster.
+2. Install `kubectl` on Jenkins EC2 if not installed.
+3. Configure Jenkins pipeline to use `k8s-token` and cluster endpoint for deploying resources.
+
+---
+
+This completes the setup of an EC2 instance as the EKS Master Node for running `kubectl` commands and integrating Kubernetes automation with Jenkins.
+
