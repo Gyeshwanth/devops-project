@@ -17,6 +17,7 @@ spec:
       containers:
         - name: frontend
           image: yeshwanthgosi/frontend:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 80
 ---
