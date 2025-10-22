@@ -38,6 +38,7 @@ spec:
       containers:
         - name: backend
           image: yeshwanthgosi/backend:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 5000
           env:
