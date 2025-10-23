@@ -418,7 +418,7 @@ pipeline {
         steps {
              script {
                   
-    withKubeConfig(caCertificate: '', clusterName: ' yesh-cluster', contextName: '', credentialsId: 'k8s-token', namespace: 'dev', restrictKubeConfigAccess: false, serverUrl: 'https://7CEBD932F89B3BD349EDE73AD44A8264.sk1.ap-south-1.eks.amazonaws.com') {
+    withKubeConfig(caCertificate: '', clusterName: ' yesh-cluster', contextName: '', credentialsId: 'k8s-token', namespace: 'prod', restrictKubeConfigAccess: false, serverUrl: 'https://7CEBD932F89B3BD349EDE73AD44A8264.sk1.ap-south-1.eks.amazonaws.com') {
                         sh 'kubectl apply -f k8s-prod/sc.yaml'
                         sleep 20
                         sh 'kubectl apply -f k8s-prod/mysql.yaml -n prod'
@@ -437,7 +437,7 @@ pipeline {
         steps {
              script {
                   
-    withKubeConfig(caCertificate: '', clusterName: ' yesh-cluster', contextName: '', credentialsId: 'k8s-token', namespace: 'dev', restrictKubeConfigAccess: false, serverUrl: 'https://7CEBD932F89B3BD349EDE73AD44A8264.sk1.ap-south-1.eks.amazonaws.com') {
+    withKubeConfig(caCertificate: '', clusterName: ' yesh-cluster', contextName: '', credentialsId: 'k8s-token', namespace: 'prod', restrictKubeConfigAccess: false, serverUrl: 'https://7CEBD932F89B3BD349EDE73AD44A8264.sk1.ap-south-1.eks.amazonaws.com') {
                        sh 'kubectl get pods -n prod'
                         sleep 20
                          sh 'kubectl get ingress -n prod'
@@ -523,7 +523,7 @@ Reference RBAC YAML files: [RBAC YAMLs](https://github.com/Gyeshwanth/Terraform-
 
 **Steps:**
 
-1. Create namespace `dev`.
+1. Create namespace `prod`.
 2. Create secret YAML `secret.yaml`:
 
 ```yaml
@@ -539,13 +539,13 @@ metadata:
 3. Apply secret:
 
 ```bash
-kubectl apply -f secret.yaml -n dev
+kubectl apply -f secret.yaml -n prod
 ```
 
 4. Retrieve token:
 
 ```bash
-kubectl describe secret mysecretname -n dev
+kubectl describe secret mysecretname -n prod
 ```
 
 *Copy token → Jenkins → Manage → Credentials → Secret Text → ID: `k8s-token`*
