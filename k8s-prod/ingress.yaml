@@ -10,7 +10,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: # websitedomain yeshwanth.com
+    - host: yeshw.shop
       http:
         paths:
           - path: /api
@@ -27,7 +27,7 @@ spec:
                 name: frontend-svc
                 port:
                   number: 80
-    - host: # www.yeshwanth.com
+    - host: # www.yeshw.shop
       http:
         paths:
           - path: /api
@@ -46,6 +46,6 @@ spec:
                   number: 80
   tls:
     - hosts:
-        - yeshwanth.com
-        - www.yeshwanth.com
+        - yeshw.shop
+        - www.yeshw.shop
       secretName: yeshwanth-co-tls
