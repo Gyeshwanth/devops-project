@@ -174,7 +174,9 @@ ls -l
 * **Pipeline Stage View**
 * **SonarQube Scanner for Jenkins**
 * **Docker Pipeline**
-* **Docker Compose Build Step**
+* **Kubernetes CLI**
+* **Kubernetes**
+* **Kubernetes Credentials**
 * **Generic Webhook Trigger**
 ---
 
@@ -504,63 +506,15 @@ ssh -i your-key.pem ubuntu@<EC2_PUBLIC_IP>
 
 ## 2. Install Required Tools & Plugins
 
-**Install AWS CLI, kubectl, eksctl:**
+**Refer URL Below for EKS-Step**
 
-```bash
-# Update system
-sudo apt update && sudo apt install -y curl unzip
-
-# AWS CLI
-curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-unzip awscliv2.zip
-sudo ./aws/install
-
-# kubectl
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-sudo install -o root -g root -m 0755 kubectl /usr/local/bin/
-
-# eksctl
-curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
-sudo mv /tmp/eksctl /usr/local/bin/
-```
+https://github.com/Gyeshwanth/devops-project/blob/main/EKS-Setup.md
 
 **Plugins Required for Jenkins:**
 
 * Kubernetes CLI
 * Kubernetes
 * Kubernetes Credentials
-
----
-
-## 3. Configure kubeconfig
-
-```bash
-aws eks --region ap-south-1 update-kubeconfig --name yesh-cluster
-```
-
----
-
-## 4. Associate IAM OIDC Provider
-
-```bash
-eksctl utils associate-iam-oidc-provider --region ap-south-1 --cluster yesh-cluster --approve
-```
-
----
-
-## 5. Create IAM Service Account for EBS CSI Driver
-
-```bash
-eksctl create iamserviceaccount \
---region ap-south-1 \
---name ebs-csi-controller-sa \
---namespace kube-system \
---cluster yesh-cluster \
---attach-policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy \
---approve \
---override-existing-serviceaccounts
-```
-
 ---
 
 ## 6. Apply Kubernetes RBAC YAMLs for Jenkins Automation
