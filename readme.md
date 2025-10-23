@@ -698,4 +698,7 @@ This setup ensures:
 * Controlled or automatic deployments with Continuous Delivery/Deployment.
 * Secure, DNS-mapped endpoints with SSL/TLS verification.
 
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/535c14fd-bbdf-4a51-b150-308948707566" />
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/972b9a17-3ecd-48b3-8988-90baf9b79a06" />
+
 
