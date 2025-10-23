@@ -98,7 +98,7 @@ pipeline {
         steps {
              script {
                   
-    withKubeConfig(caCertificate: '', clusterName: ' yesh-cluster', contextName: '', credentialsId: 'k8s-token', namespace: 'dev', restrictKubeConfigAccess: false, serverUrl: 'https://7CEBD932F89B3BD349EDE73AD44A8264.sk1.ap-south-1.eks.amazonaws.com') {
+    withKubeConfig(caCertificate: '', clusterName: ' yesh-cluster', contextName: '', credentialsId: 'k8s-token', namespace: 'prod', restrictKubeConfigAccess: false, serverUrl: 'https://7CEBD932F89B3BD349EDE73AD44A8264.sk1.ap-south-1.eks.amazonaws.com') {
                         sh 'kubectl apply -f k8s-prod/sc.yaml'
                         sleep 20
                         sh 'kubectl apply -f k8s-prod/mysql.yaml -n prod'
@@ -117,7 +117,7 @@ pipeline {
         steps {
              script {
                   
-    withKubeConfig(caCertificate: '', clusterName: ' yesh-cluster', contextName: '', credentialsId: 'k8s-token', namespace: 'dev', restrictKubeConfigAccess: false, serverUrl: 'https://7CEBD932F89B3BD349EDE73AD44A8264.sk1.ap-south-1.eks.amazonaws.com') {
+    withKubeConfig(caCertificate: '', clusterName: ' yesh-cluster', contextName: '', credentialsId: 'k8s-token', namespace: 'prod', restrictKubeConfigAccess: false, serverUrl: 'https://7CEBD932F89B3BD349EDE73AD44A8264.sk1.ap-south-1.eks.amazonaws.com') {
                        sh 'kubectl get pods -n prod'
                         sleep 20
                          sh 'kubectl get ingress -n prod'
