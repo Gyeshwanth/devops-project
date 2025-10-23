@@ -304,3 +304,36 @@ kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernete
 5. After this, you can **re-add or update your Terraform code** for the CSI driver if you want to automate it for future clusters.
 
 > ✅ Summary: First create the cluster, then set up the IAM service account for EBS CSI, then deploy the CSI driver. This prevents Terraform apply from failing due to missing IAM roles or OIDC association.
+
+---
+
+### 💡 Alternate AWS Console Method
+
+1. Go to **AWS Console → EKS → Cluster → Add-ons**.
+2. Select **Amazon EBS CSI Driver **, and delete this.
+3. If you see existing IAM service account conflicts, go to **CloudFormation**, delete the existing `ebs-csi-controller-sa` stack.
+4. Then run:
+
+```bash
+eksctl create iamserviceaccount \
+--region ap-south-1 \
+--name ebs-csi-controller-sa \
+--namespace kube-system \
+--cluster yesh-cluster \
+--attach-policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy \
+--approve \
+--override-existing-serviceaccounts
+```
+
+5. Finally, deploy with:
+
+```bash
+kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/ecr/?ref=release-1.11"
+```
+
+Then re-run Terraform:
+
+```bash
+terraform init
+terraform apply --auto-approve
+```
