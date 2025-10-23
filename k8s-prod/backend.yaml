@@ -22,14 +22,14 @@ spec:
           env:
            - name: DB_HOST
               value: mysql
-            - name: DB_USER
+           - name: DB_USER
               value: root
-            - name: DB_PASSWORD
+           - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: mysql-secret
                   key: MYSQL_ROOT_PASSWORD
-            - name: DB_NAME
+           - name: DB_NAME
               valueFrom:
                 configMapKeyRef:
                   name: mysql-config
