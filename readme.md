@@ -175,7 +175,7 @@ ls -l
 * **SonarQube Scanner for Jenkins**
 * **Docker Pipeline**
 * **Docker Compose Build Step**
-
+* **Generic Webhook Trigger**
 ---
 
 ## 🛠️ Jenkins Configuration
@@ -607,3 +607,141 @@ kubectl describe secret mysecretname -n dev
 ---
 
 This completes the setup of an EC2 instance as the EKS Master Node for running `kubectl` commands and integrating Kubernetes automation with Jenkins.
+
+---
+
+
+# 📘 Jenkins Webhook & CD Setup Guide
+
+## Automation with Webhook
+
+You can automate your Jenkins pipelines using either the **GitHub plugin** or **Generic Webhook Trigger**.
+
+* **Generic Webhook Trigger**: Flexible, supports multiple integration sources with Jenkins automation.
+* **GitHub Plugin**: Only supports GitHub repositories.
+
+---
+
+## Step 1: Install Plugin Generic Webhook Trigger
+
+1. Go to your Jenkins **Pipeline** → **Current Build** → **Configure**.
+2. Under **Triggers**, select **Generic Webhook Trigger**.
+
+## Step 2: Configure Webhook Parameters
+
+1. In the **Post Parameter** section, add:
+
+   * **Variable**: `ref`
+   * **Expression (JSONPath)**: `$.ref`
+
+## Step 3: Token Setup
+
+1. Provide any string as the **token**.
+2. You can make the token hidden by selecting the **Credentials** section and specifying the token.
+
+## Step 4: Optional Filter
+
+1. In the **Optional Filter** section, configure:
+
+   * **Expression**: `refs/heads/branch_name`
+   * **Text**: `$ref`
+2. Apply and save.
+3. Copy the webhook URL:
+
+   ```
+   http://jenkins_url/generic-webhook-trigger/invoke?token=yourtoken
+   ```
+
+## Step 5: Configure GitHub Webhook
+
+1. Go to **GitHub Repository** → **Settings** → **Webhooks**.
+2. Click **Add webhook**.
+3. Set **Payload URL** to the copied Jenkins URL.
+4. Set **Content type** to `application/json`.
+5. Select the specific events (e.g., **Push**) to trigger the pipeline.
+6. Verify webhook by checking **Recent Deliveries**.
+
+---
+
+## Continuous Delivery vs Continuous Deployment
+
+* **Continuous Delivery (CD)**: Requires manual permission to deploy.
+* **Continuous Deployment (CD)**: Deployment happens automatically without manual approval.
+
+### To enable manual approval in pipeline:
+
+```groovy
+stage('Manual Approval for Production') {
+    steps {
+        timeout(time: 1, unit: 'HOURS') {
+            input message: 'Approve deployment to PRODUCTION?', ok: 'Deploy'
+        }
+    }
+}
+```
+
+* If not approved within 1 hour, deployment triggers automatically.
+
+---
+
+## Kubernetes Resources Verification
+
+* Check all resources under **prod namespace**:
+
+```bash
+kubectl get all -n prod
+```
+
+* Check **Ingress**:
+
+```bash
+kubectl get ingress -n prod
+```
+
+* Copy the **ADDRESS URL**.
+* Run `nslookup` to get IP address and details:
+
+```bash
+nslookup <copied_address>
+```
+
+---
+
+## Domain Mapping (GoDaddy)
+
+1. Buy domain on GoDaddy → **Profile** → **Products**.
+2. Configure DNS:
+
+   * **Type A** → `@` → Value: Non-authoritative IP address from `nslookup`.
+   * **Type CNAME** → `www` → URL: Non-authoritative URL from `nslookup`.
+3. Verify DNS mapping on [https://www.whatsmydns.net](https://www.whatsmydns.net) using **A** and **CNAME**.
+
+---
+
+## SSL/TLS Verification
+
+* Check certificate:
+
+```bash
+kubectl get certificate -n prod
+```
+
+* If `READY=True`, SSL is active.
+* Describe certificate details:
+
+```bash
+kubectl describe certificate <secretName> -n prod
+kubectl describe certificate yeshwanth-co-tls -n prod
+```
+
+* Verify HTTPS access in browser for secure endpoints.
+
+---
+
+This setup ensures:
+
+* Automated Jenkins pipeline triggers via GitHub or other sources.
+* Controlled or automatic deployments with Continuous Delivery/Deployment.
+* Secure, DNS-mapped endpoints with SSL/TLS verification.
+
+
