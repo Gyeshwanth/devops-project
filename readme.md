@@ -700,6 +700,163 @@ This setup ensures:
 
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/535c14fd-bbdf-4a51-b150-308948707566" />
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/972b9a17-3ecd-48b3-8988-90baf9b79a06" />
+
+
+# EKS Monitoring Setup with Prometheus and Grafana
+
+This guide provides steps to set up a complete monitoring stack on EKS EC2 instances using Prometheus, Grafana, Node Exporter, Kube-State-Metrics, and Alertmanager.
+
+---
+
+##
+
+* EC2 instances running  (EKS cluster)
+* Kubectl configured to access the cluster
+*  download Helm and chart repositories
+
+---
+
+## 1. Install Helm
+
+Helm is a package manager for Kubernetes that simplifies application deployment.
+
+```bash
+sudo apt update && sudo apt upgrade -y
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+```
+
+Verify installation:
+
+```bash
+helm version
+```
+
+---
+
+## 2. Add Prometheus Helm repository
+
+```bash
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+```
+
+---
+
+## 3. Create a directory for monitoring configs
+
+```bash
+mkdir monitoring && cd monitoring
+```
+
+Create a custom `values.yaml`:
+
+```yaml
+alertmanager:
+  enabled: false
+prometheus:
+  prometheusSpec:
+    service:
+      type: LoadBalancer
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: ebs-sc
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 5Gi
+grafana:
+  enabled: true
+  service:
+    type: LoadBalancer
+  adminUser: admin
+  adminPassword: admin123
+nodeExporter:
+  service:
+    type: LoadBalancer
+kubeStateMetrics:
+  enabled: true
+  service:
+    type: LoadBalancer
+additionalScrapeConfigs:
+  - job_name: node-exporter
+    static_configs:
+      - targets:
+          - node-exporter:9100
+  - job_name: kube-state-metrics
+    static_configs:
+      - targets:
+          - kube-state-metrics:8080
+```
+
+> **Note:** This configuration exposes Grafana, Prometheus, Node Exporter, and Kube-State-Metrics via LoadBalancer for external access and uses EBS volumes for persistence.
+
+---
+
+## 4. Deploy the monitoring stack
+
+```bash
+helm upgrade --install monitoring prometheus-community/kube-prometheus-stack -f values.yaml -n monitoring --create-namespace
+```
+
+Verify deployment:
+
+```bash
+kubectl get all -n monitoring
+```
+
+---
+
+## 5. Patch services for LoadBalancer access (if needed)
+
+```bash
+kubectl patch svc monitoring-kube-prometheus-prometheus -n monitoring -p '{"spec": {"type": "LoadBalancer"}}'
+kubectl patch svc monitoring-kube-state-metrics -n monitoring -p '{"spec": {"type": "LoadBalancer"}}'
+kubectl patch svc monitoring-prometheus-node-exporter -n monitoring -p '{"spec": {"type": "LoadBalancer"}}'
+```
+
+> This ensures Prometheus, Node Exporter, and Kube-State-Metrics are accessible externally.
+
+---
+
+## 6. Components Installed and Their Purpose
+
+| Component                       | Purpose                                                                               |
+| ------------------------------- | ------------------------------------------------------------------------------------- |
+| **Prometheus**                  | Scrapes cluster and node metrics; stores time-series data                             |
+| **Grafana**                     | Preconfigured dashboards for Kubernetes, Nodes, Pods; visualization layer             |
+| **Node Exporter**               | Metrics for CPU, Memory, Disk, Network per node                                       |
+| **Kube-State-Metrics**          | Metrics for cluster object health (Pods, Deployments, PVCs, Jobs)                     |
+| **Alertmanager**                | Preconfigured alert rules for common cluster issues (disabled in current values.yaml) |
+| **Custom Resource Definitions** | ServiceMonitors and PrometheusRules for dynamic metric discovery and alerting         |
+| **RBAC & ServiceAccounts**      | Proper permissions for all components to access metrics and resources                 |
+
+---
+
+## 7. Current Configuration Summary (Based on `values.yaml`)
+
+* **Alertmanager:** Disabled → no alerts will be sent
+* **Prometheus:** LoadBalancer service, 5Gi EBS storage
+* **Grafana:** LoadBalancer service, admin credentials set to `admin/admin123`
+* **Node Exporter:** LoadBalancer service (exposed externally, typically should be ClusterIP)
+* **Kube-State-Metrics:** LoadBalancer service (exposed externally, typically should be ClusterIP)
+* **Additional Scrape Configs:** Node Exporter and Kube-State-Metrics manually added (redundant; ServiceMonitors handle this automatically)
+
+> ⚠️ **Note:** Exposing Node Exporter and Kube-State-Metrics externally is generally not recommended in production; internal ClusterIP is safer.
+
+---
+
+## 8. Next Steps / Recommendations
+
+* Enable **Alertmanager** for production alerting.
+* Use **Kubernetes Secrets** for Grafana credentials instead of hardcoding.
+* Consider keeping **Node Exporter and Kube-State-Metrics as ClusterIP** and rely on Prometheus for scraping internally.
+* Import official Grafana dashboards for Kubernetes, Node Exporter, and Prometheus.
+* Add ServiceMonitors for your application and Jenkins to monitor custom metrics.
+
+---
+
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/77f1251e-98fe-4394-b6a2-cf5dc956ab61" />
 
 
