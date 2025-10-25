@@ -859,5 +859,229 @@ kubectl patch svc monitoring-prometheus-node-exporter -n monitoring -p '{"spec":
 
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/77f1251e-98fe-4394-b6a2-cf5dc956ab61" />
 
+-------------
+
+# Notification with Slack
+
+## Create Slack Account
+
+1. Go to Slack and create an account.
+2. Click **Create a workspace**.
+3. Enter a **workspace name**, click **Next**, and skip the trial/free steps.
+
+---
+
+## Complete Jenkins-Slack Integration via Webhook
+
+### **PART 1: Create Slack App and Webhook URL**
+
+#### Step 1: Create Slack App
+
+1. Navigate to [https://api.slack.com/apps](https://api.slack.com/apps)
+2. Click **Create New App**
+3. Choose **From scratch**
+4. Fill in the following details:
+
+   * **App Name:** any name of your choice
+   * **Workspace:** your workspace name
+5. Click **Create App**
+
+#### Step 2: Enable Webhooks
+
+1. In the left sidebar, click **Incoming Webhooks**
+2. Toggle **Activate Incoming Webhooks** to enable
+
+#### Step 3: Add Webhook to a Channel
+
+1. Scroll down and click **Add New Webhook to Workspace**
+2. Select a channel, e.g., `#general`
+3. Click **Allow**
+4. Copy the generated Webhook URL (example below):
+
+   ```
+   https://hooks.slack.com/services/T0XXXX/B0YYYY/ZZZZZ
+   ```
+
+---
+
+### **PART 2: OAuth Scopes Required (MANDATORY)**
+
+If you plan to use bot integration via OAuth token (not just webhooks), add the following scopes:
+
+| OAuth Scope       | Description                                 |
+| ----------------- | ------------------------------------------- |
+| chat:write        | Send messages as the bot                    |
+| chat:write.public | Send messages to public channels not joined |
+| channels:read     | Read public channels                        |
+| groups:read       | Read private channels                       |
+| users:read        | Read user info (optional for mentions)      |
+
+> These are not all required for webhook-only use but essential for token-based plugins.
+
+To add:
+
+* Go to **OAuth & Permissions** → Scroll to **Scopes**
+* Click **Add an OAuth Scope** → Add all scopes above
+* Return to the top and click **Reinstall to Workspace**
+
+---
+
+### **PART 3: Configure Jenkins**
+
+1. Install **Slack Notification Plugin** in Jenkins.
+
+2. Go to **Jenkins > Credentials**:
+
+   * Add both **Webhook URL** and **OAuth token** as separate credentials.
+   * For OAuth token → choose **Secret Text**, ID = `slack-token`
+   * For Webhook URL → choose **Secret Text**, ID = `slack-webhook`
+
+3. Go to **Jenkins > Manage Jenkins > System**:
+
+   * Under **Slack**, configure:
+
+     * Workspace Name
+     * Slack Token Credential ID = `slack-token`
+     * Channel Name (e.g., `#general`)
+     * Check **Custom Slack Bot User**
+   * Click **Test Connection** and verify Slack response.
+
+---
+
+### **PART 4: Jenkinsfile Configuration**
+
+Below is a fully working Jenkinsfile for Slack notifications:
+
+```groovy
+pipeline {
+    agent any
+
+    environment {
+        PROJECT_NAME = '🧰 My-App'
+        ENVIRONMENT = '🚀 Production'
+    }
+
+    stages {
+        stage('Compile') {
+            steps {
+                echo "🏗️ Compiling..."
+            }
+        }
+        stage('Test') {
+            steps {
+                echo "🧪 Running tests..."
+            }
+        }
+        stage('Build') {
+            steps {
+                echo "🧪 Building..."
+            }
+        }
+        stage('Security') {
+            steps {
+                echo "🧪 Security..."
+            }
+        }
+        stage('Deploy') {
+            steps {
+                echo "🚀 Deploying..."
+            }
+        }
+    }
+
+    post {
+        success {
+            withCredentials([string(credentialsId: 'slack-webhook', variable: 'SLACK_URL')]) {
+                script {
+                    def message = """{
+                        \"text\": \"*✅ ${PROJECT_NAME} Build Successful!*\",
+                        \"attachments\": [
+                            {
+                                \"color\": \"#36a64f\",
+                                \"fields\": [
+                                    { \"title\": \"Job\", \"value\": \"${env.JOB_NAME}\", \"short\": true },
+                                    { \"title\": \"Build\", \"value\": \"#${env.BUILD_NUMBER}\", \"short\": true },
+                                    { \"title\": \"Environment\", \"value\": \"${ENVIRONMENT}\", \"short\": true }
+                                ],
+                                \"footer\": \"Jenkins CI\",
+                                \"footer_icon\": \"https://www.jenkins.io/images/logos/jenkins/jenkins.png\",
+                                \"ts\": ${System.currentTimeMillis() / 1000},
+                                \"actions\": [
+                                    {
+                                        \"type\": \"button\",
+                                        \"text\": \"View Build\",
+                                        \"url\": \"${env.BUILD_URL}\",
+                                        \"style\": \"primary\"
+                                    }
+                                ]
+                            }
+                        ]
+                    }"""
+                    sh """curl -X POST -H 'Content-type: application/json' --data '${message}' $SLACK_URL"""
+                }
+            }
+        }
+
+        failure {
+            withCredentials([string(credentialsId: 'slack-webhook', variable: 'SLACK_URL')]) {
+                script {
+                    def message = """{
+                        \"text\": \"<!here> *❌ ${PROJECT_NAME} Build Failed!*\",
+                        \"attachments\": [
+                            {
+                                \"color\": \"#FF0000\",
+                                \"fields\": [
+                                    { \"title\": \"Job\", \"value\": \"${env.JOB_NAME}\", \"short\": true },
+                                    { \"title\": \"Build\", \"value\": \"#${env.BUILD_NUMBER}\", \"short\": true },
+                                    { \"title\": \"Environment\", \"value\": \"${ENVIRONMENT}\", \"short\": true }
+                                ],
+                                \"footer\": \"Jenkins CI\",
+                                \"footer_icon\": \"https://www.jenkins.io/images/logos/jenkins/jenkins.png\",
+                                \"ts\": ${System.currentTimeMillis() / 1000},
+                                \"actions\": [
+                                    {
+                                        \"type\": \"button\",
+                                        \"text\": \"View Build Logs\",
+                                        \"url\": \"${env.BUILD_URL}\",
+                                        \"style\": \"danger\"
+                                    }
+                                ]
+                            }
+                        ]
+                    }"""
+                    sh """curl -X POST -H 'Content-type: application/json' --data '${message}' $SLACK_URL"""
+                }
+            }
+        }
+
+        always {
+            echo "🎯 Post-build notification sent"
+        }
+    }
+}
+```
+
+---
+
+### **PART 5: Run and Verify**
+
+#### Step 1: Trigger a Jenkins Build
+
+* Run your pipeline manually or via Git webhook.
+
+#### Step 2: Verify Slack Notification
+
+* Check your Slack channel to see messages:
+
+  * ✅ Build Passed
+  * ❌ Build Failed
+
+> Congratulations! You’ve successfully configured Jenkins to send Slack build notifications 🚀
+
+<img width="1920" height="1080" alt="Screenshot (259)" src="https://github.com/user-attachments/assets/6f64b8c2-4334-470f-aa6c-c0912ef8fd26" />
+
+
+
+
 
 
