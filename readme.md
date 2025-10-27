@@ -686,6 +686,12 @@ kubectl get certificate -n prod
 ```bash
 kubectl describe certificate <secretName> -n prod
 kubectl describe certificate yeshwanth-co-tls -n prod
+
+```
+* If Certificate issues r if certificate not created , delete certificate after this delete cmd then after sometime certificate created automatically and verfy about weather ready true r not 
+```bash
+kubectl delete certificate yeshwanth-co-tls -n prod 
+
 ```
 
 * Verify HTTPS access in browser for secure endpoints.
