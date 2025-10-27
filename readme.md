@@ -688,11 +688,27 @@ kubectl describe certificate <secretName> -n prod
 kubectl describe certificate yeshwanth-co-tls -n prod
 
 ```
-* If Certificate issues r if certificate not created , delete certificate after this delete cmd then after sometime certificate created automatically and verfy about weather ready true r not 
-```bash
-kubectl delete certificate yeshwanth-co-tls -n prod 
+---
 
+## 🧾 Troubleshoot Related Certificate In  Kubernetes (TLS)
+
+If your certificate is not created or has issues(After sometime also still Ready False), you can manually delete it to trigger automatic recreation by **cert-manager**:
+
+```bash
+kubectl delete certificate yeshwanth-co-tls -n prod
 ```
+
+After deletion, wait a few minutes — cert-manager will reissue it automatically.
+
+Verify the status:
+
+```bash
+kubectl get certificate yeshwanth-co-tls -n prod
+```
+
+If `READY` is `True`, your certificate is successfully recreated.
+
+---
 
 * Verify HTTPS access in browser for secure endpoints.
 
